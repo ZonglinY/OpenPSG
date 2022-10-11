@@ -5,6 +5,9 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("device: ", device)
+
 
 def cosine_annealing(step, total_steps, lr_max, lr_min):
     return lr_min + (lr_max -
@@ -14,13 +17,18 @@ def cosine_annealing(step, total_steps, lr_max, lr_min):
 class BaseTrainer:
     def __init__(self,
                  net: nn.Module,
+                 args: None,
                  train_loader: DataLoader,
+                 processed_text_inputs: None,
                  learning_rate: float = 0.1,
                  momentum: float = 0.9,
                  weight_decay: float = 0.0005,
                  epochs: int = 100) -> None:
+        assert processed_text_inputs != None and args != None
+        self.args = args
         self.net = net
         self.train_loader = train_loader
+        self.processed_text_inputs = processed_text_inputs.to(device)
 
         self.optimizer = torch.optim.SGD(
             net.parameters(),
@@ -41,7 +49,10 @@ class BaseTrainer:
         )
 
     def train_epoch(self):
-        self.net.train()  # enter train mode
+        if self.args.model_type == 'clip':
+            self.net.eval()  # enter train mode
+        else:
+            self.net.train()  # enter train mode
 
         loss_avg = 0.0
         train_dataiter = iter(self.train_loader)
@@ -49,10 +60,19 @@ class BaseTrainer:
         for train_step in tqdm(range(1, len(train_dataiter) + 1)):
             # for train_step in tqdm(range(1, 5)):
             batch = next(train_dataiter)
-            data = batch['data'].cuda()
+            cur_input = {}
+            # data = batch['data'].cuda()
+            cur_input['pixel_values'] = batch['data'].cuda()
+            cur_input['input_ids'] = self.processed_text_inputs['input_ids']
+            cur_input['attention_mask'] = self.processed_text_inputs['attention_mask']
             target = batch['soft_label'].cuda()
             # forward
-            logits = self.net(data)
+            # logits = self.net(data)
+            outputs = self.net(**cur_input)
+            logits = outputs.logits_per_image
+            # print("logits.size(): ", logits.size())
+            # logits.size(): [batch_size, 56]
+            # target.size(): [batch_size, 56]
             loss = F.binary_cross_entropy_with_logits(logits,
                                                       target,
                                                       reduction='sum')

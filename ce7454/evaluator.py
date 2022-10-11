@@ -4,13 +4,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Evaluator:
     def __init__(
         self,
         net: nn.Module,
+        processed_text_inputs: None,
         k: int,
     ):
+        assert processed_text_inputs != None
+        self.processed_text_inputs = processed_text_inputs.to(device)
         self.net = net
         self.k = k
 
@@ -23,8 +27,15 @@ class Evaluator:
         pred_list, gt_list = [], []
         with torch.no_grad():
             for batch in data_loader:
-                data = batch['data'].cuda()
-                logits = self.net(data)
+                cur_input = {}
+                cur_input['pixel_values'] = batch['data'].cuda()
+                cur_input['input_ids'] = self.processed_text_inputs['input_ids']
+                cur_input['attention_mask'] = self.processed_text_inputs['attention_mask']
+                outputs = self.net(**cur_input)
+                logits = outputs.logits_per_image
+                # data = batch['data'].cuda()
+                # logits = self.net(data)
+
                 prob = torch.sigmoid(logits)
                 target = batch['soft_label'].cuda()
                 loss = F.binary_cross_entropy(prob, target, reduction='sum')
@@ -67,8 +78,14 @@ class Evaluator:
         pred_list = []
         with torch.no_grad():
             for batch in data_loader:
-                data = batch['data'].cuda()
-                logits = self.net(data)
+                cur_input = {}
+                cur_input['pixel_values'] = batch['data'].cuda()
+                cur_input['input_ids'] = self.processed_text_inputs['input_ids']
+                cur_input['attention_mask'] = self.processed_text_inputs['attention_mask']
+                outputs = self.net(**cur_input)
+                logits = outputs.logits_per_image
+                # data = batch['data'].cuda()
+                # logits = self.net(data)
                 prob = torch.sigmoid(logits)
                 pred = torch.topk(prob.data, self.k)[1]
                 pred = pred.cpu().detach().tolist()
