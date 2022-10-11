@@ -24,7 +24,7 @@ parser.add_argument('--weight_decay', type=float, default=0.0005)
 parser.add_argument('--model_type', type=str, default="clip")
 args = parser.parse_args()
 
-if not args.model_type == 'clip' or args.model_type == 'resnet':
+if not (args.model_type == 'clip' or args.model_type == 'resnet'):
     raise NotImplementedError
 
 savename = f'{args.model_name}_e{args.epoch}_lr{args.lr}_bs{args.batch_size}_m{args.momentum}_wd{args.weight_decay}'
