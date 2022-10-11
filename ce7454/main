@@ -1,0 +1,12 @@
+#!/bin/bash
+#SBATCH -J resnet
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -t 200:00:00
+#SBATCH --partition=PV1003q
+#SBATCH -w node15
+#SBATCH --gres=gpu:1
+#SBATCH --output /export/home/zonglin001/Out/resnet.out
+
+
+python -u ./main.py
