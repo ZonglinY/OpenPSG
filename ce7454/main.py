@@ -15,9 +15,9 @@ from utils import relation_texts
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_name', type=str, default='res50')
-parser.add_argument('--epoch', type=int, default=36)
+parser.add_argument('--epoch', type=int, default=10)
 # parser.add_argument('--lr', type=float, default=0.001)
-parser.add_argument('--lr', type=float, default=1e-8)
+parser.add_argument('--lr', type=float, default=3e-9)
 parser.add_argument('--batch_size', type=int, default=8)
 parser.add_argument('--momentum', type=float, default=0.9)
 parser.add_argument('--weight_decay', type=float, default=0.0005)
